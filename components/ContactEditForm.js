@@ -7,6 +7,7 @@ import { EXCEL_ACCEPT, isExcelFile, updateContact, uploadStockFile } from "@/lib
 import { formatDate } from "@/lib/format-date";
 import {
   CALL_STATUSES,
+  CONTACT_TYPES,
   EMAIL_STATUSES,
   FILE_RECEIVED,
   FILE_STATES,
@@ -22,8 +23,11 @@ export default function ContactEditForm({ contact, imageSlot, onCancel, onSaved 
     email: contact.email,
     phone: contact.phone,
     company: contact.company,
+    position: contact.position,
+    website: contact.website,
     address: contact.address,
     notes: contact.notes,
+    type: contact.type,
     callStatus: contact.callStatus,
     emailStatus: contact.emailStatus,
     stock: contact.stock,
@@ -102,6 +106,18 @@ export default function ContactEditForm({ contact, imageSlot, onCancel, onSaved 
 
         <div className="space-y-4 md:col-span-3">
           <ContactFields values={values} onChange={handleChange} disabled={isSubmitting} />
+
+          <div>
+            <p className="mb-1 text-sm font-medium text-gray-700">Type</p>
+            <StatusSelect
+              label="Type"
+              value={values.type}
+              options={CONTACT_TYPES}
+              widthClassName="w-24"
+              onChange={(value) => handleStatusChange("type", value)}
+              disabled={isSubmitting}
+            />
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>

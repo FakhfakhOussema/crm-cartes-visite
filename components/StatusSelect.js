@@ -18,14 +18,25 @@ export const TONES = {
     select: "bg-gray-100 text-gray-700 ring-gray-300",
     dot: "bg-gray-400",
   },
+  blue: {
+    select: "bg-sky-50 text-sky-800 ring-sky-200",
+    dot: "bg-sky-500",
+  },
 };
 
-export default function StatusSelect({ value, options, onChange, label, disabled = false }) {
+export default function StatusSelect({
+  value,
+  options,
+  onChange,
+  label,
+  disabled = false,
+  widthClassName = "w-44",
+}) {
   const current = options.find((option) => option.value === value);
   const tone = TONES[current?.tone] ?? TONES.orange;
 
   return (
-    <div className="relative inline-block w-44">
+    <div className={`relative inline-block ${widthClassName}`}>
       <span
         aria-hidden="true"
         className={`pointer-events-none absolute left-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full ${tone.dot}`}

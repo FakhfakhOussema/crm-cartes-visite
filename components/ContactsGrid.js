@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import CopyButton from "@/components/CopyButton";
 import StatusSelect from "@/components/StatusSelect";
 import { EXCEL_ACCEPT } from "@/lib/contacts";
 import { formatDate } from "@/lib/format-date";
 import { rowTone } from "@/lib/row-tone";
+import { websiteHref } from "@/lib/website";
 import {
   CALL_STATUSES,
+  CONTACT_TYPES,
   EMAIL_STATUSES,
   FILE_RECEIVED,
   FILE_STATES,
@@ -14,18 +17,36 @@ import {
 } from "@/lib/statuses";
 
 const COLUMNS = [
-  "Last name",
+  "Company",
   "First name",
+  "Last name",
+  "Position",
   "Email",
   "Phone",
-  "Company",
+  "Web site",
+  "Address",
   "Call status",
   "Email status",
   "Stock",
+  "Type",
   "File state",
   "File",
   "Date added",
 ];
+
+// Plain text value followed by its copy icon (shown when the row is hovered). `truncate`: long text cut with "…"
+// (the full text stays in the tooltip).
+function CopyableText({ text, label, truncate = false }) {
+  if (!text) return null;
+  return (
+    <span className={`inline-flex items-center gap-1 ${truncate ? "max-w-xs" : ""}`}>
+      <span className={truncate ? "truncate" : ""} title={truncate ? text : undefined}>
+        {text}
+      </span>
+      <CopyButton text={text} label={label} revealOnHover />
+    </span>
+  );
+}
 
 const actionButtonClassName =
   "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500";
@@ -168,6 +189,7 @@ export default function ContactsGrid({
   onUploadFile,
   onPreviewFile,
   onDeleteContact,
+  getMailtoHref,
   highlightedId,
 }) {
   // After an addition or a change of stock / state, the row moves (colour sort): we bring it back into view.
@@ -220,29 +242,73 @@ export default function ContactsGrid({
                   key={contact.id}
                   data-contact-id={contact.id}
                   data-tone={rowTone(contact)}
-                  className={`transition-colors ${tone.row} ${contact.id === highlightedId ? "row-highlight" : ""}`}
+                  className={`group transition-colors ${tone.row} ${contact.id === highlightedId ? "row-highlight" : ""}`}
                 >
                   <td className={`whitespace-nowrap px-4 py-3 font-medium text-gray-900 ${tone.edge}`}>
-                    {contact.lastName}
+                    <CopyableText text={contact.company} label="the company" />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    {contact.firstName}
+                    <CopyableText text={contact.firstName} label="the first name" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                    <CopyableText text={contact.lastName} label="the last name" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                    <CopyableText text={contact.position} label="the position" />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     {contact.email && (
-                      <a
-                        href={`mailto:${contact.email}`}
-                        className="text-indigo-600 hover:text-indigo-800 hover:underline"
-                      >
-                        {contact.email}
-                      </a>
+                      <span className="inline-flex items-center gap-1">
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                        >
+                          {contact.email}
+                        </a>
+                        <CopyButton text={contact.email} label="the email" revealOnHover />
+                        {/* Opens the mail program with the email of the contact's type, ready to send. */}
+                        <a
+                          href={getMailtoHref(contact)}
+                          aria-label={`Send the type ${contact.type} email to ${fullName}`}
+                          title={`Send the type ${contact.type} email`}
+                          className="rounded-md p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <path d="M6 12 3.27 3.13a.5.5 0 0 1 .7-.58l17.5 8.75a.5.5 0 0 1 0 .9l-17.5 8.75a.5.5 0 0 1-.7-.58L6 12Zm0 0h7" />
+                          </svg>
+                        </a>
+                      </span>
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    {contact.phone}
+                    <CopyableText text={contact.phone} label="the phone number" />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    {contact.company}
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {contact.website && (
+                      <span className="inline-flex items-center gap-1">
+                        <a
+                          href={websiteHref(contact.website)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                        >
+                          {contact.website}
+                        </a>
+                        <CopyButton text={contact.website} label="the web site" revealOnHover />
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    <CopyableText text={contact.address} label="the address" truncate />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <StatusSelect
@@ -270,6 +336,15 @@ export default function ContactsGrid({
                       value={contact.stock}
                       options={STOCK_STATUSES}
                       onChange={(value) => onStatusChange(contact.id, "stock", value)}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <StatusSelect
+                      label={`Type of ${fullName}`}
+                      value={contact.type}
+                      options={CONTACT_TYPES}
+                      widthClassName="w-20"
+                      onChange={(value) => onStatusChange(contact.id, "type", value)}
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">

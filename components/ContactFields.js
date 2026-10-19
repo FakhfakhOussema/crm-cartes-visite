@@ -8,6 +8,8 @@ export const EMPTY_CONTACT_VALUES = {
   email: "",
   phone: "",
   company: "",
+  position: "",
+  website: "",
   address: "",
 };
 
@@ -72,15 +74,17 @@ export function Field({
   );
 }
 
-// The six fields of a contact, shared by manual entry and the form pre-filled after extraction.
+// The eight fields of a contact, shared by manual entry and the form pre-filled after extraction.
 export default function ContactFields({ values, onChange, disabled }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <Field label="Last name" name="lastName" value={values.lastName} onChange={onChange} required disabled={disabled} />
+      <Field label="Company" name="company" value={values.company} onChange={onChange} disabled={disabled} className="sm:col-span-2" />
       <Field label="First name" name="firstName" value={values.firstName} onChange={onChange} required disabled={disabled} />
+      <Field label="Last name" name="lastName" value={values.lastName} onChange={onChange} required disabled={disabled} />
+      <Field label="Position" name="position" value={values.position} onChange={onChange} disabled={disabled} className="sm:col-span-2" />
       <Field label="Email" name="email" value={values.email} onChange={onChange} disabled={disabled} inputMode="email" />
       <Field label="Phone" name="phone" value={values.phone} onChange={onChange} disabled={disabled} inputMode="tel" />
-      <Field label="Company" name="company" value={values.company} onChange={onChange} disabled={disabled} className="sm:col-span-2" />
+      <Field label="Web site" name="website" value={values.website} onChange={onChange} disabled={disabled} inputMode="url" className="sm:col-span-2" />
       <Field label="Address" name="address" value={values.address} onChange={onChange} disabled={disabled} className="sm:col-span-2" />
     </div>
   );

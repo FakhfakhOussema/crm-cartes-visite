@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import ContactEditForm from "@/components/ContactEditForm";
+import CopyButton from "@/components/CopyButton";
 import Modal from "@/components/Modal";
 import { TONES } from "@/components/StatusSelect";
 import { formatDate } from "@/lib/format-date";
+import { websiteHref } from "@/lib/website";
 import {
   CALL_STATUSES,
+  CONTACT_TYPES,
   EMAIL_STATUSES,
   FILE_RECEIVED,
   FILE_STATES,
@@ -26,12 +29,16 @@ function StatusBadge({ value, options }) {
   );
 }
 
-function Detail({ label, className = "", children }) {
+// `copy`: text offered by a copy icon next to the value (text fields only).
+function Detail({ label, className = "", copy, children }) {
   return (
     <div className={className}>
       <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className="mt-1 break-words text-sm text-gray-900">
-        {children || <span className="text-gray-400">—</span>}
+      <dd className="mt-1 flex items-start gap-1 break-words text-sm text-gray-900">
+        <span className="min-w-0 break-words">
+          {children || <span className="text-gray-400">—</span>}
+        </span>
+        {copy && <CopyButton text={copy} label={`the ${label.toLowerCase()}`} />}
       </dd>
     </div>
   );
@@ -161,9 +168,19 @@ export default function ContactDetailsModal({
             <div className="md:col-span-2">{image}</div>
 
             <dl className="grid grid-cols-1 content-start gap-x-4 gap-y-4 sm:grid-cols-2 md:col-span-3">
-              <Detail label="Last name">{contact.lastName}</Detail>
-              <Detail label="First name">{contact.firstName}</Detail>
-              <Detail label="Email">
+              <Detail label="Company" className="sm:col-span-2" copy={contact.company}>
+                {contact.company}
+              </Detail>
+              <Detail label="First name" copy={contact.firstName}>
+                {contact.firstName}
+              </Detail>
+              <Detail label="Last name" copy={contact.lastName}>
+                {contact.lastName}
+              </Detail>
+              <Detail label="Position" className="sm:col-span-2" copy={contact.position}>
+                {contact.position}
+              </Detail>
+              <Detail label="Email" copy={contact.email}>
                 {contact.email && (
                   <a
                     href={`mailto:${contact.email}`}
@@ -173,12 +190,26 @@ export default function ContactDetailsModal({
                   </a>
                 )}
               </Detail>
-              <Detail label="Phone">{contact.phone}</Detail>
-              <Detail label="Company" className="sm:col-span-2">
-                {contact.company}
+              <Detail label="Phone" copy={contact.phone}>
+                {contact.phone}
               </Detail>
-              <Detail label="Address" className="sm:col-span-2">
+              <Detail label="Web site" className="sm:col-span-2" copy={contact.website}>
+                {contact.website && (
+                  <a
+                    href={websiteHref(contact.website)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-indigo-600 hover:text-indigo-800 hover:underline"
+                  >
+                    {contact.website}
+                  </a>
+                )}
+              </Detail>
+              <Detail label="Address" className="sm:col-span-2" copy={contact.address}>
                 {contact.address}
+              </Detail>
+              <Detail label="Type" className="sm:col-span-2">
+                <StatusBadge value={contact.type} options={CONTACT_TYPES} />
               </Detail>
               <Detail label="Call status">
                 <StatusBadge value={contact.callStatus} options={CALL_STATUSES} />

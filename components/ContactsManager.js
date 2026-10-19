@@ -5,6 +5,7 @@ import AddContactModal from "@/components/AddContactModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import ContactDetailsModal from "@/components/ContactDetailsModal";
 import ContactsGrid from "@/components/ContactsGrid";
+import EmailTemplatesModal from "@/components/EmailTemplatesModal";
 import ExcelPreviewModal from "@/components/ExcelPreviewModal";
 import {
   fetchContacts,
@@ -12,6 +13,7 @@ import {
   updateContactField,
   uploadStockFile,
 } from "@/lib/contacts";
+import { buildMailtoHref, fetchEmailTemplates } from "@/lib/email-templates";
 import { countByTone, filterByTones, sortByTone } from "@/lib/row-tone";
 import { filterContacts } from "@/lib/search";
 
@@ -31,17 +33,17 @@ const TONE_FILTERS = [
     active: "border-orange-300 bg-orange-50 text-orange-800",
   },
   {
-    tone: "red",
-    label: "Unavailable",
-    dot: "bg-red-500",
-    active: "border-red-300 bg-red-50 text-red-800",
-  },
-  {
     tone: "none",
     label: "Not processed",
     hint: "Stock not specified",
     dot: "bg-gray-400",
     active: "border-gray-400 bg-gray-100 text-gray-800",
+  },
+  {
+    tone: "red",
+    label: "Unavailable",
+    dot: "bg-red-500",
+    active: "border-red-300 bg-red-50 text-red-800",
   },
 ];
 
@@ -58,12 +60,14 @@ export default function ContactsManager() {
   const [contactToDelete, setContactToDelete] = useState(null);
   const [highlightedId, setHighlightedId] = useState(null); // row to find again after a sort
   const [query, setQuery] = useState("");
+  const [emailTemplates, setEmailTemplates] = useState({}); // { A: { subject, body }, B: { … } }
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   // Colours active in the filter buttons (several possible; none = show everything).
   const [activeTones, setActiveTones] = useState([]);
 
   // The search applies first; the button counters cover its result; then the colour filter;
-  // then the sort: green, orange, red, not processed.
+  // then the sort: green, orange, not processed, red.
   const searchedContacts = filterContacts(contacts, query);
   const toneCounts = countByTone(searchedContacts);
   const visibleContacts = sortByTone(filterByTones(searchedContacts, activeTones));
@@ -95,6 +99,21 @@ export default function ContactsManager() {
       cancelled = true;
     };
   }, [reloadKey]);
+
+  // The email templates are loaded apart: if they fail, the contacts stay usable (Send then only fills the recipient).
+  useEffect(() => {
+    let cancelled = false;
+    fetchEmailTemplates()
+      .then((data) => {
+        if (!cancelled) setEmailTemplates(data);
+      })
+      .catch((error) => {
+        if (!cancelled) setUpdateError(`The email templates could not be loaded: ${error.message}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleTone(tone) {
     setActiveTones((current) =>
@@ -213,6 +232,25 @@ export default function ContactsManager() {
             </div>
             <button
               type="button"
+              onClick={() => setIsTemplatesOpen(true)}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <path d="M3 8l9 6 9-6M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
+              </svg>
+              Emails
+            </button>
+            <button
+              type="button"
               onClick={() => setIsModalOpen(true)}
               className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             >
@@ -329,6 +367,7 @@ export default function ContactsManager() {
               onUploadFile={handleFileUpload}
               onPreviewFile={(contact) => setPreviewUrl(contact.fileUrl)}
               onDeleteContact={setContactToDelete}
+              getMailtoHref={(contact) => buildMailtoHref(contact, emailTemplates)}
               highlightedId={highlightedId}
             />
           ))}
@@ -339,6 +378,16 @@ export default function ContactsManager() {
         <AddContactModal
           onClose={() => setIsModalOpen(false)}
           onContactAdded={handleContactAdded}
+        />
+      )}
+
+      {isTemplatesOpen && (
+        <EmailTemplatesModal
+          templates={emailTemplates}
+          onClose={() => setIsTemplatesOpen(false)}
+          onSaved={(type, template) =>
+            setEmailTemplates((current) => ({ ...current, [type]: template }))
+          }
         />
       )}
 
