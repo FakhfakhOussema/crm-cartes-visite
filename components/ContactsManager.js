@@ -13,7 +13,7 @@ import {
   updateContactField,
   uploadStockFile,
 } from "@/lib/contacts";
-import { buildMailtoHref, fetchEmailTemplates } from "@/lib/email-templates";
+import { buildOutlookComposeHref, fetchEmailTemplates } from "@/lib/email-templates";
 import { countByTone, filterByTones, sortByTone } from "@/lib/row-tone";
 import { filterContacts } from "@/lib/search";
 
@@ -367,7 +367,7 @@ export default function ContactsManager() {
               onUploadFile={handleFileUpload}
               onPreviewFile={(contact) => setPreviewUrl(contact.fileUrl)}
               onDeleteContact={setContactToDelete}
-              getMailtoHref={(contact) => buildMailtoHref(contact, emailTemplates)}
+              getSendHref={(contact) => buildOutlookComposeHref(contact, emailTemplates)}
               highlightedId={highlightedId}
             />
           ))}

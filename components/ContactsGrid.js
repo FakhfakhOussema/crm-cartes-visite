@@ -189,7 +189,7 @@ export default function ContactsGrid({
   onUploadFile,
   onPreviewFile,
   onDeleteContact,
-  getMailtoHref,
+  getSendHref,
   highlightedId,
 }) {
   // After an addition or a change of stock / state, the row moves (colour sort): we bring it back into view.
@@ -268,9 +268,11 @@ export default function ContactsGrid({
                         {contact.email}
                       </a>
                       <CopyButton text={contact.email} label="the email" revealOnHover />
-                      {/* Opens the mail program with the email of the contact's type, ready to send. */}
+                      {/* Opens Outlook on the web (new tab) with the email of the contact's type, ready to send. */}
                       <a
-                        href={getMailtoHref(contact)}
+                        href={getSendHref(contact)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         aria-label={`Send the type ${contact.type} email to ${fullName}`}
                         title={`Send the type ${contact.type} email`}
                         className="rounded-md p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
