@@ -201,240 +201,241 @@ export default function ContactsGrid({
   }, [highlightedId]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              {COLUMNS.map((column) => (
-                <th
-                  key={column}
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
-                >
-                  {column}
-                </th>
-              ))}
+    // No scroll container of its own: a table wider than the window widens the page, and the browser's own
+    // horizontal scrollbar is used. `w-max min-w-full`: full width, and the frame follows the table if it is wider.
+    // No `overflow-hidden` either (it would cut the table): the rounded corners are given to the header cells.
+    <div className="w-max min-w-full rounded-xl border border-gray-200 bg-white shadow-sm">
+      <table className="w-full divide-y divide-gray-200 text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            {COLUMNS.map((column) => (
               <th
+                key={column}
                 scope="col"
-                className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+                className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 first:rounded-tl-xl"
               >
-                Actions
+                {column}
               </th>
+            ))}
+            <th
+              scope="col"
+              className="whitespace-nowrap rounded-tr-xl px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {contacts.length === 0 && (
+            <tr>
+              <td
+                colSpan={COLUMNS.length + 1}
+                className="px-4 py-12 text-center text-gray-500"
+              >
+                No contacts yet.
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {contacts.length === 0 && (
-              <tr>
-                <td
-                  colSpan={COLUMNS.length + 1}
-                  className="px-4 py-12 text-center text-gray-500"
-                >
-                  No contacts yet.
+          )}
+          {contacts.map((contact) => {
+            const fullName = `${contact.firstName} ${contact.lastName}`.trim() || "this contact";
+            const tone = ROW_STYLES[rowTone(contact)];
+            return (
+              <tr
+                key={contact.id}
+                data-contact-id={contact.id}
+                data-tone={rowTone(contact)}
+                className={`group transition-colors ${tone.row} ${contact.id === highlightedId ? "row-highlight" : ""}`}
+              >
+                <td className={`whitespace-nowrap px-4 py-3 font-medium text-gray-900 ${tone.edge}`}>
+                  <CopyableText text={contact.company} label="the company" />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                  <CopyableText text={contact.firstName} label="the first name" />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                  <CopyableText text={contact.lastName} label="the last name" />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                  <CopyableText text={contact.position} label="the position" />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  {contact.email && (
+                    <span className="inline-flex items-center gap-1">
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        {contact.email}
+                      </a>
+                      <CopyButton text={contact.email} label="the email" revealOnHover />
+                      {/* Opens the mail program with the email of the contact's type, ready to send. */}
+                      <a
+                        href={getMailtoHref(contact)}
+                        aria-label={`Send the type ${contact.type} email to ${fullName}`}
+                        title={`Send the type ${contact.type} email`}
+                        className="rounded-md p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <path d="M6 12 3.27 3.13a.5.5 0 0 1 .7-.58l17.5 8.75a.5.5 0 0 1 0 .9l-17.5 8.75a.5.5 0 0 1-.7-.58L6 12Zm0 0h7" />
+                        </svg>
+                      </a>
+                    </span>
+                  )}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                  <CopyableText text={contact.phone} label="the phone number" />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  {contact.website && (
+                    <span className="inline-flex items-center gap-1">
+                      <a
+                        href={websiteHref(contact.website)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        {contact.website}
+                      </a>
+                      <CopyButton text={contact.website} label="the web site" revealOnHover />
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-gray-700">
+                  <CopyableText text={contact.address} label="the address" truncate />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StatusSelect
+                    label={`Call status of ${fullName}`}
+                    value={contact.callStatus}
+                    options={CALL_STATUSES}
+                    onChange={(value) =>
+                      onStatusChange(contact.id, "callStatus", value)
+                    }
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StatusSelect
+                    label={`Email status of ${fullName}`}
+                    value={contact.emailStatus}
+                    options={EMAIL_STATUSES}
+                    onChange={(value) =>
+                      onStatusChange(contact.id, "emailStatus", value)
+                    }
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StatusSelect
+                    label={`Stock of ${fullName}`}
+                    value={contact.stock}
+                    options={STOCK_STATUSES}
+                    onChange={(value) => onStatusChange(contact.id, "stock", value)}
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StatusSelect
+                    label={`Type of ${fullName}`}
+                    value={contact.type}
+                    options={CONTACT_TYPES}
+                    widthClassName="w-20"
+                    onChange={(value) => onStatusChange(contact.id, "type", value)}
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StatusSelect
+                    label={`File state of ${fullName}`}
+                    value={contact.fileState}
+                    options={FILE_STATES}
+                    onChange={(value) => onStatusChange(contact.id, "fileState", value)}
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <StockFileCell
+                    contact={contact}
+                    fullName={fullName}
+                    onUploadFile={onUploadFile}
+                    onPreviewFile={onPreviewFile}
+                  />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-500">
+                  {formatDate(contact.dateAdded)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => onViewContact(contact)}
+                    aria-label={`View the details of ${fullName}`}
+                    title="View details"
+                    className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-5 w-5"
+                    >
+                      <path d="M2.04 12.32a1.01 1.01 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5c4.64 0 8.57 3.01 9.96 7.18.07.21.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5c-4.64 0-8.57-3.01-9.96-7.18Z" />
+                      <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEditContact(contact)}
+                    aria-label={`Edit ${fullName}`}
+                    title="Edit contact"
+                    className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-5 w-5"
+                    >
+                      <path d="m16.86 4.49 1.69-1.69a1.88 1.88 0 1 1 2.65 2.65L10.58 16.07a4.5 4.5 0 0 1-1.9 1.13L6 18l.8-2.69a4.5 4.5 0 0 1 1.13-1.9l8.93-8.93Zm0 0L19.5 7.13M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteContact(contact)}
+                    aria-label={`Delete ${fullName}`}
+                    title="Delete contact"
+                    className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-5 w-5"
+                    >
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 5v6m4-6v6" />
+                    </svg>
+                  </button>
                 </td>
               </tr>
-            )}
-            {contacts.map((contact) => {
-              const fullName = `${contact.firstName} ${contact.lastName}`.trim() || "this contact";
-              const tone = ROW_STYLES[rowTone(contact)];
-              return (
-                <tr
-                  key={contact.id}
-                  data-contact-id={contact.id}
-                  data-tone={rowTone(contact)}
-                  className={`group transition-colors ${tone.row} ${contact.id === highlightedId ? "row-highlight" : ""}`}
-                >
-                  <td className={`whitespace-nowrap px-4 py-3 font-medium text-gray-900 ${tone.edge}`}>
-                    <CopyableText text={contact.company} label="the company" />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    <CopyableText text={contact.firstName} label="the first name" />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    <CopyableText text={contact.lastName} label="the last name" />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    <CopyableText text={contact.position} label="the position" />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {contact.email && (
-                      <span className="inline-flex items-center gap-1">
-                        <a
-                          href={`mailto:${contact.email}`}
-                          className="text-indigo-600 hover:text-indigo-800 hover:underline"
-                        >
-                          {contact.email}
-                        </a>
-                        <CopyButton text={contact.email} label="the email" revealOnHover />
-                        {/* Opens the mail program with the email of the contact's type, ready to send. */}
-                        <a
-                          href={getMailtoHref(contact)}
-                          aria-label={`Send the type ${contact.type} email to ${fullName}`}
-                          title={`Send the type ${contact.type} email`}
-                          className="rounded-md p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                        >
-                          <svg
-                            aria-hidden="true"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <path d="M6 12 3.27 3.13a.5.5 0 0 1 .7-.58l17.5 8.75a.5.5 0 0 1 0 .9l-17.5 8.75a.5.5 0 0 1-.7-.58L6 12Zm0 0h7" />
-                          </svg>
-                        </a>
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                    <CopyableText text={contact.phone} label="the phone number" />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {contact.website && (
-                      <span className="inline-flex items-center gap-1">
-                        <a
-                          href={websiteHref(contact.website)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-800 hover:underline"
-                        >
-                          {contact.website}
-                        </a>
-                        <CopyButton text={contact.website} label="the web site" revealOnHover />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">
-                    <CopyableText text={contact.address} label="the address" truncate />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StatusSelect
-                      label={`Call status of ${fullName}`}
-                      value={contact.callStatus}
-                      options={CALL_STATUSES}
-                      onChange={(value) =>
-                        onStatusChange(contact.id, "callStatus", value)
-                      }
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StatusSelect
-                      label={`Email status of ${fullName}`}
-                      value={contact.emailStatus}
-                      options={EMAIL_STATUSES}
-                      onChange={(value) =>
-                        onStatusChange(contact.id, "emailStatus", value)
-                      }
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StatusSelect
-                      label={`Stock of ${fullName}`}
-                      value={contact.stock}
-                      options={STOCK_STATUSES}
-                      onChange={(value) => onStatusChange(contact.id, "stock", value)}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StatusSelect
-                      label={`Type of ${fullName}`}
-                      value={contact.type}
-                      options={CONTACT_TYPES}
-                      widthClassName="w-20"
-                      onChange={(value) => onStatusChange(contact.id, "type", value)}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StatusSelect
-                      label={`File state of ${fullName}`}
-                      value={contact.fileState}
-                      options={FILE_STATES}
-                      onChange={(value) => onStatusChange(contact.id, "fileState", value)}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <StockFileCell
-                      contact={contact}
-                      fullName={fullName}
-                      onUploadFile={onUploadFile}
-                      onPreviewFile={onPreviewFile}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                    {formatDate(contact.dateAdded)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onViewContact(contact)}
-                      aria-label={`View the details of ${fullName}`}
-                      title="View details"
-                      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="M2.04 12.32a1.01 1.01 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5c4.64 0 8.57 3.01 9.96 7.18.07.21.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5c-4.64 0-8.57-3.01-9.96-7.18Z" />
-                        <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onEditContact(contact)}
-                      aria-label={`Edit ${fullName}`}
-                      title="Edit contact"
-                      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="m16.86 4.49 1.69-1.69a1.88 1.88 0 1 1 2.65 2.65L10.58 16.07a4.5 4.5 0 0 1-1.9 1.13L6 18l.8-2.69a4.5 4.5 0 0 1 1.13-1.9l8.93-8.93Zm0 0L19.5 7.13M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteContact(contact)}
-                      aria-label={`Delete ${fullName}`}
-                      title="Delete contact"
-                      className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 5v6m4-6v6" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

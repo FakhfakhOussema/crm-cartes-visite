@@ -19,6 +19,13 @@
   }
 }
 
+/* The app is light-only (its components set their own light colours). The page background must cover the whole
+   scrollable area, also the part beyond the window width when the grid is wider than the screen: otherwise the
+   system's dark mode paints that part black. */
+html {
+  background: var(--color-gray-50);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
