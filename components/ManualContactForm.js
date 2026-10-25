@@ -5,7 +5,9 @@ import ContactFields, {
   EMPTY_CONTACT_VALUES,
   validateContactValues,
 } from "@/components/ContactFields";
+import DuplicateContactModal from "@/components/DuplicateContactModal";
 import { insertContact } from "@/lib/contacts";
+import { findDuplicates } from "@/lib/duplicates";
 
 // Business card shown for reference (automatic analysis failed) so its information can be copied.
 // It is not saved with the contact. The local URL is created and released by the tag itself
@@ -38,17 +40,23 @@ function ReferenceImage({ file }) {
   );
 }
 
-export default function ManualContactForm({ onClose, onContactAdded, referenceFile = null }) {
+export default function ManualContactForm({
+  onClose,
+  onContactAdded,
+  existingContacts,
+  referenceFile = null,
+}) {
   const [values, setValues] = useState(EMPTY_CONTACT_VALUES);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [duplicateMatches, setDuplicateMatches] = useState(null); // contacts that look like this one
 
   function handleChange(event) {
     const { name, value } = event.target;
     setValues((current) => ({ ...current, [name]: value }));
   }
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
@@ -58,6 +66,17 @@ export default function ManualContactForm({ onClose, onContactAdded, referenceFi
       return;
     }
 
+    // Already in the list: the user decides (add anyway, or cancel) before anything is saved.
+    const matches = findDuplicates(existingContacts, values);
+    if (matches.length > 0) {
+      setError(null);
+      setDuplicateMatches(matches);
+      return;
+    }
+    save();
+  }
+
+  async function save() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -72,38 +91,51 @@ export default function ManualContactForm({ onClose, onContactAdded, referenceFi
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="px-6 py-5">
-        {referenceFile && <ReferenceImage file={referenceFile} />}
+    <>
+      <form onSubmit={handleSubmit}>
+        <div className="px-6 py-5">
+          {referenceFile && <ReferenceImage file={referenceFile} />}
 
-        <ContactFields values={values} onChange={handleChange} disabled={isSubmitting} />
+          <ContactFields values={values} onChange={handleChange} disabled={isSubmitting} />
 
-        {error && (
-          <p
-            role="alert"
-            className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          {error && (
+            <p
+              role="alert"
+              className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+              {error}
+            </p>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
-            {error}
-          </p>
-        )}
-      </div>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "Adding..." : "Add contact"}
+          </button>
+        </div>
+      </form>
 
-      <div className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? "Adding..." : "Add contact"}
-        </button>
-      </div>
-    </form>
+      {duplicateMatches && (
+        <DuplicateContactModal
+          matches={duplicateMatches}
+          onCancel={() => setDuplicateMatches(null)}
+          onConfirm={() => {
+            setDuplicateMatches(null);
+            save();
+          }}
+        />
+      )}
+    </>
   );
 }

@@ -46,7 +46,7 @@ export default function StatusSelect({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        className={`w-full cursor-pointer appearance-none rounded-full py-1.5 pl-7 pr-8 text-sm font-medium ring-1 ring-inset transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 ${tone.select}`}
+        className={`w-full cursor-pointer appearance-none rounded-full py-1.5 pl-7 pr-8 text-base font-medium ring-1 sm:text-sm ring-inset transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 ${tone.select}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

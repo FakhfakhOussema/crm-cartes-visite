@@ -10,7 +10,12 @@ import { extractCardData } from "@/lib/extract-card";
 const SLOW_ANALYSIS_MS = 8000;
 
 // phase: "select" (image choice) -> "analyzing" -> "review" (pre-filled form) or "error".
-export default function CardImportPanel({ onClose, onContactAdded, onSwitchToManual }) {
+export default function CardImportPanel({
+  onClose,
+  onContactAdded,
+  onSwitchToManual,
+  existingContacts,
+}) {
   const previewUrlRef = useRef(null);
   const abortRef = useRef(null);
   const [selection, setSelection] = useState(null); // { file, url }
@@ -115,6 +120,7 @@ export default function CardImportPanel({ onClose, onContactAdded, onSwitchToMan
         onBack={() => setPhase("select")}
         onClose={onClose}
         onContactAdded={onContactAdded}
+        existingContacts={existingContacts}
       />
     );
   }

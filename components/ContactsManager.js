@@ -13,6 +13,7 @@ import {
   updateContactField,
   uploadStockFile,
 } from "@/lib/contacts";
+import { markDuplicates } from "@/lib/duplicates";
 import { buildOutlookComposeHref, fetchEmailTemplates } from "@/lib/email-templates";
 import { countByTone, filterByTones, sortByTone } from "@/lib/row-tone";
 import { filterContacts } from "@/lib/search";
@@ -62,6 +63,7 @@ export default function ContactsManager() {
   const [query, setQuery] = useState("");
   const [emailTemplates, setEmailTemplates] = useState({}); // { A: { subject, body }, B: { … } }
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null); // row selected by a click, one at a time (not saved)
 
   // Colours active in the filter buttons (several possible; none = show everything).
   const [activeTones, setActiveTones] = useState([]);
@@ -71,6 +73,8 @@ export default function ContactsManager() {
   const searchedContacts = filterContacts(contacts, query);
   const toneCounts = countByTone(searchedContacts);
   const visibleContacts = sortByTone(filterByTones(searchedContacts, activeTones));
+  // Computed on the whole list (not the filtered one): a duplicate stays marked whatever the search or filters.
+  const duplicates = markDuplicates(contacts);
   const viewedContact = contacts.find((contact) => contact.id === viewing?.id);
 
   // The highlight fades by itself.
@@ -121,6 +125,10 @@ export default function ContactsManager() {
     );
   }
 
+  function toggleSelected(id) {
+    setSelectedId((current) => (current === id ? null : id));
+  }
+
   function handleRetry() {
     setLoadStatus("loading");
     setReloadKey((key) => key + 1);
@@ -144,6 +152,7 @@ export default function ContactsManager() {
 
   function handleContactDeleted(id) {
     setContacts((current) => current.filter((contact) => contact.id !== id));
+    setSelectedId((current) => (current === id ? null : current));
     setContactToDelete(null);
   }
 
@@ -207,8 +216,8 @@ export default function ContactsManager() {
               </p>
             )}
           </div>
-          <div className="flex w-full items-center gap-3 sm:w-auto">
-            <div className="relative flex-1 sm:w-72 sm:flex-none">
+          <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap">
+            <div className="relative w-full sm:w-72 sm:flex-none">
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
@@ -227,13 +236,13 @@ export default function ContactsManager() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search for a contact…"
                 aria-label="Search for a contact by last name, first name, email or company"
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-base text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 sm:text-sm"
               />
             </div>
             <button
               type="button"
               onClick={() => setIsTemplatesOpen(true)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex flex-1 shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:flex-none"
             >
               <svg
                 aria-hidden="true"
@@ -252,7 +261,7 @@ export default function ContactsManager() {
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex flex-1 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:flex-none"
             >
               <svg
                 aria-hidden="true"
@@ -286,18 +295,18 @@ export default function ContactsManager() {
         {loadStatus === "ready" && contacts.length > 0 && (
           <ul
             aria-label="Filter by colour"
-            className="mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600"
+            className="-mx-4 mb-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 text-xs text-gray-600 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
           >
             {TONE_FILTERS.map(({ tone, label, hint, dot, active }) => {
               const isActive = activeTones.includes(tone);
               return (
-                <li key={tone}>
+                <li key={tone} className="shrink-0">
                   <button
                     type="button"
                     aria-pressed={isActive}
                     title={hint}
                     onClick={() => toggleTone(tone)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       isActive
                         ? active
                         : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
@@ -311,11 +320,11 @@ export default function ContactsManager() {
               );
             })}
             {activeTones.length > 0 && (
-              <li>
+              <li className="shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveTones([])}
-                  className="rounded-full px-2 py-1 font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="whitespace-nowrap rounded-full px-2 py-1 font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   Show all
                 </button>
@@ -361,6 +370,9 @@ export default function ContactsManager() {
           ) : (
             <ContactsGrid
               contacts={visibleContacts}
+              duplicates={duplicates}
+              selectedId={selectedId}
+              onToggleSelected={toggleSelected}
               onStatusChange={handleStatusChange}
               onViewContact={(contact) => setViewing({ id: contact.id, edit: false })}
               onEditContact={(contact) => setViewing({ id: contact.id, edit: true })}
@@ -378,6 +390,7 @@ export default function ContactsManager() {
         <AddContactModal
           onClose={() => setIsModalOpen(false)}
           onContactAdded={handleContactAdded}
+          existingContacts={contacts}
         />
       )}
 

@@ -112,7 +112,7 @@ export default function EmailTemplatesModal({ templates, onClose, onSaved }) {
           )}
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
           <button
             type="button"
             onClick={onClose}

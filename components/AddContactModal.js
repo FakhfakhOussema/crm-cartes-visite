@@ -10,7 +10,7 @@ const TABS = [
   { id: "manual", label: "Manual entry" },
 ];
 
-export default function AddContactModal({ onClose, onContactAdded }) {
+export default function AddContactModal({ onClose, onContactAdded, existingContacts }) {
   const baseId = useId();
   const tabRefs = useRef([]);
   const [activeTab, setActiveTab] = useState("import");
@@ -99,6 +99,7 @@ export default function AddContactModal({ onClose, onContactAdded }) {
         <CardImportPanel
           onClose={onClose}
           onContactAdded={onContactAdded}
+          existingContacts={existingContacts}
           onSwitchToManual={(file) => {
             setReferenceFile(file);
             setActiveTab("manual");
@@ -114,6 +115,7 @@ export default function AddContactModal({ onClose, onContactAdded }) {
         <ManualContactForm
           onClose={onClose}
           onContactAdded={onContactAdded}
+          existingContacts={existingContacts}
           referenceFile={referenceFile}
         />
       </div>

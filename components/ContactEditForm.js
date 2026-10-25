@@ -7,6 +7,7 @@ import { EXCEL_ACCEPT, isExcelFile, updateContact, uploadStockFile } from "@/lib
 import { formatDate } from "@/lib/format-date";
 import {
   CALL_STATUSES,
+  CONTACT_CHANNELS,
   CONTACT_TYPES,
   EMAIL_STATUSES,
   FILE_RECEIVED,
@@ -28,6 +29,7 @@ export default function ContactEditForm({ contact, imageSlot, onCancel, onSaved 
     address: contact.address,
     notes: contact.notes,
     type: contact.type,
+    channel: contact.channel,
     callStatus: contact.callStatus,
     emailStatus: contact.emailStatus,
     stock: contact.stock,
@@ -107,16 +109,28 @@ export default function ContactEditForm({ contact, imageSlot, onCancel, onSaved 
         <div className="space-y-4 md:col-span-3">
           <ContactFields values={values} onChange={handleChange} disabled={isSubmitting} />
 
-          <div>
-            <p className="mb-1 text-sm font-medium text-gray-700">Type</p>
-            <StatusSelect
-              label="Type"
-              value={values.type}
-              options={CONTACT_TYPES}
-              widthClassName="w-24"
-              onChange={(value) => handleStatusChange("type", value)}
-              disabled={isSubmitting}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-1 text-sm font-medium text-gray-700">Type</p>
+              <StatusSelect
+                label="Type"
+                value={values.type}
+                options={CONTACT_TYPES}
+                widthClassName="w-24"
+                onChange={(value) => handleStatusChange("type", value)}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-sm font-medium text-gray-700">Contact</p>
+              <StatusSelect
+                label="Contact"
+                value={values.channel}
+                options={CONTACT_CHANNELS}
+                onChange={(value) => handleStatusChange("channel", value)}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -236,7 +250,7 @@ export default function ContactEditForm({ contact, imageSlot, onCancel, onSaved 
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+      <div className="sticky bottom-0 flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
         <button
           type="button"
           onClick={onCancel}

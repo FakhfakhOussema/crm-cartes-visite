@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/format-date";
 import { websiteHref } from "@/lib/website";
 import {
   CALL_STATUSES,
+  CONTACT_CHANNELS,
   CONTACT_TYPES,
   EMAIL_STATUSES,
   FILE_RECEIVED,
@@ -46,6 +47,10 @@ function Detail({ label, className = "", copy, children }) {
 
 function CardImage({ url, name }) {
   const [failed, setFailed] = useState(false);
+  // A card photographed on its side is stored as a portrait picture: it is turned to show the card landscape.
+  const [size, setSize] = useState(null); // natural size, known once the image has loaded
+  const [turn, setTurn] = useState(90); // degrees, clockwise; the "Rotate" button flips it to the other side
+  const isPortrait = size !== null && size.height > size.width;
 
   if (!url || failed) {
     return (
@@ -71,22 +76,59 @@ function CardImage({ url, name }) {
 
   return (
     <div>
-      {/* Remote Supabase Storage URL: next/image would require declaring the domain, with no gain here. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt={`Business card of ${name}`}
-        onError={() => setFailed(true)}
-        className="max-h-[60vh] w-full rounded-xl border border-gray-200 bg-gray-50 object-contain"
-      />
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+      {/* Portrait picture: the frame takes the landscape ratio and the image, turned 90°, is made as wide as the
+          frame is tall (before the turn, its width is the frame's height). */}
+      <div
+        className={
+          isPortrait
+            ? "relative w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+            : undefined
+        }
+        style={isPortrait ? { aspectRatio: `${size.height} / ${size.width}` } : undefined}
       >
-        Open full size
-      </a>
+        {/* Remote Supabase Storage URL: next/image would require declaring the domain, with no gain here. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={`Business card of ${name}`}
+          onLoad={(event) =>
+            setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })
+          }
+          onError={() => setFailed(true)}
+          className={
+            isPortrait
+              ? "absolute left-1/2 top-1/2 max-w-none"
+              : "max-h-[60vh] w-full rounded-xl border border-gray-200 bg-gray-50 object-contain"
+          }
+          style={
+            isPortrait
+              ? {
+                  width: `${(size.width / size.height) * 100}%`,
+                  transform: `translate(-50%, -50%) rotate(${turn}deg)`,
+                }
+              : undefined
+          }
+        />
+      </div>
+      <div className="mt-2 flex items-center gap-4">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          Open full size
+        </a>
+        {isPortrait && (
+          <button
+            type="button"
+            onClick={() => setTurn((current) => -current)}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus-visible:underline"
+          >
+            Rotate
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -208,8 +250,11 @@ export default function ContactDetailsModal({
               <Detail label="Address" className="sm:col-span-2" copy={contact.address}>
                 {contact.address}
               </Detail>
-              <Detail label="Type" className="sm:col-span-2">
+              <Detail label="Type">
                 <StatusBadge value={contact.type} options={CONTACT_TYPES} />
+              </Detail>
+              <Detail label="Contact">
+                <StatusBadge value={contact.channel} options={CONTACT_CHANNELS} />
               </Detail>
               <Detail label="Call status">
                 <StatusBadge value={contact.callStatus} options={CALL_STATUSES} />
