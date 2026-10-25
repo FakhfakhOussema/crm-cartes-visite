@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EMPTY_CONTACT_VALUES } from "@/components/ContactFields";
+import CameraIcon from "@/components/CameraIcon";
 import ExtractedContactForm from "@/components/ExtractedContactForm";
 import { extractCardData } from "@/lib/extract-card";
+import { shrinkImage } from "@/lib/shrink-image";
 
 // Beyond this, we warn that the analysis is taking longer than usual: the server retries on its own (new Gemini
 // attempts, then the OpenRouter fallback) when Gemini is overloaded, which can take almost a minute.
@@ -15,8 +17,11 @@ export default function CardImportPanel({
   onContactAdded,
   onSwitchToManual,
   existingContacts,
+  initialFile = null, // photo already taken (the "Scan" button of the page): shown as soon as the panel opens
 }) {
   const previewUrlRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const latestFileRef = useRef(0); // number of the last file chosen: a slower, older one must not replace it
   const abortRef = useRef(null);
   const [selection, setSelection] = useState(null); // { file, url }
   const [phase, setPhase] = useState("select");
@@ -47,12 +52,7 @@ export default function CardImportPanel({
     previewUrlRef.current = null;
   }
 
-  function handleFile(file) {
-    if (!file || isAnalyzing) return;
-    if (!file.type.startsWith("image/")) {
-      setFileError("The file must be an image (JPG, PNG, WEBP…).");
-      return;
-    }
+  function showFile(file) {
     clearPreviewUrl();
     previewUrlRef.current = URL.createObjectURL(file);
     setFileError(null);
@@ -60,6 +60,33 @@ export default function CardImportPanel({
     setPhase("select");
     setSelection({ file, url: previewUrlRef.current });
   }
+
+  async function handleFile(chosenFile) {
+    if (!chosenFile || isAnalyzing) return;
+    if (!chosenFile.type.startsWith("image/")) {
+      setFileError("The file must be an image (JPG, PNG, WEBP…).");
+      return;
+    }
+    const fileNumber = ++latestFileRef.current;
+    // Large photos (phone camera) are reduced first: the analysis accepts 10 MB at most.
+    const file = await shrinkImage(chosenFile);
+    if (fileNumber === latestFileRef.current) showFile(file);
+  }
+
+  // The photo the panel was opened with (the page's "Scan" button). Only that one, once: later choices go
+  // through the inputs.
+  useEffect(() => {
+    if (!initialFile) return undefined;
+    let cancelled = false;
+    const fileNumber = ++latestFileRef.current;
+    shrinkImage(initialFile).then((file) => {
+      if (!cancelled && fileNumber === latestFileRef.current) showFile(file);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile]);
 
   function removePreview() {
     clearPreviewUrl();
@@ -164,6 +191,28 @@ export default function CardImportPanel({
             className="sr-only"
           />
         </label>
+
+        {/* Opens the camera on a phone or tablet (the `capture` attribute is ignored on a computer, where the
+            button is hidden). */}
+        <button
+          type="button"
+          onClick={() => cameraInputRef.current.click()}
+          disabled={isAnalyzing}
+          className="mt-3 hidden w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-base font-medium text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 [@media(hover:none)]:flex"
+        >
+          <CameraIcon />
+          Take a photo
+        </button>
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleInputChange}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="sr-only"
+        />
 
         {fileError && (
           <p role="alert" className="mt-3 text-sm text-red-600">

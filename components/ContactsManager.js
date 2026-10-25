@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AddContactModal from "@/components/AddContactModal";
+import CameraIcon from "@/components/CameraIcon";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import ContactDetailsModal from "@/components/ContactDetailsModal";
 import ContactsGrid from "@/components/ContactsGrid";
@@ -55,6 +56,8 @@ export default function ContactsManager() {
   const [reloadKey, setReloadKey] = useState(0);
   const [updateError, setUpdateError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const scanInputRef = useRef(null);
+  const [scannedFile, setScannedFile] = useState(null); // photo taken with the "Scan" button
   // Open sheet: { id, edit } — `edit`: opened directly in edit mode (the grid's pencil icon).
   const [viewing, setViewing] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null); // stock file shown in the preview
@@ -127,6 +130,20 @@ export default function ContactsManager() {
 
   function toggleSelected(id) {
     setSelectedId((current) => (current === id ? null : id));
+  }
+
+  // "Scan" (phone): the photo taken with the camera opens the Add window on the import tab, ready to be analysed.
+  function handleScanChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // lets the same photo be taken again
+    if (!file) return;
+    setScannedFile(file);
+    setIsModalOpen(true);
+  }
+
+  function closeAddModal() {
+    setIsModalOpen(false);
+    setScannedFile(null);
   }
 
   function handleRetry() {
@@ -273,6 +290,26 @@ export default function ContactsManager() {
               </svg>
               Add
             </button>
+            {/* Camera shortcut, on touch screens only. */}
+            <button
+              type="button"
+              onClick={() => scanInputRef.current.click()}
+              aria-label="Scan a business card with the camera"
+              title="Scan a business card"
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 [@media(hover:none)]:inline-flex"
+            >
+              <CameraIcon />
+            </button>
+            <input
+              ref={scanInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleScanChange}
+              tabIndex={-1}
+              aria-hidden="true"
+              className="sr-only"
+            />
           </div>
         </header>
 
@@ -388,9 +425,10 @@ export default function ContactsManager() {
       {/* Mounted only when open: the internal state (image, error) is reset each time it opens. */}
       {isModalOpen && (
         <AddContactModal
-          onClose={() => setIsModalOpen(false)}
+          onClose={closeAddModal}
           onContactAdded={handleContactAdded}
           existingContacts={contacts}
+          initialFile={scannedFile}
         />
       )}
 

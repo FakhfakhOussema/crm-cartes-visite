@@ -10,7 +10,8 @@ const TABS = [
   { id: "manual", label: "Manual entry" },
 ];
 
-export default function AddContactModal({ onClose, onContactAdded, existingContacts }) {
+// `initialFile`: photo taken with the page's "Scan" button, loaded in the import tab as soon as the window opens.
+export default function AddContactModal({ onClose, onContactAdded, existingContacts, initialFile }) {
   const baseId = useId();
   const tabRefs = useRef([]);
   const [activeTab, setActiveTab] = useState("import");
@@ -100,6 +101,7 @@ export default function AddContactModal({ onClose, onContactAdded, existingConta
           onClose={onClose}
           onContactAdded={onContactAdded}
           existingContacts={existingContacts}
+          initialFile={initialFile}
           onSwitchToManual={(file) => {
             setReferenceFile(file);
             setActiveTab("manual");
