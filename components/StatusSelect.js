@@ -31,6 +31,7 @@ export default function StatusSelect({
   label,
   disabled = false,
   widthClassName = "w-44",
+  compact = false, // less inner padding (table cells)
 }) {
   const current = options.find((option) => option.value === value);
   const tone = TONES[current?.tone] ?? TONES.orange;
@@ -39,14 +40,14 @@ export default function StatusSelect({
     <div className={`relative inline-block ${widthClassName}`}>
       <span
         aria-hidden="true"
-        className={`pointer-events-none absolute left-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full ${tone.dot}`}
+        className={`pointer-events-none absolute ${compact ? "left-2.5" : "left-3"} top-1/2 h-2 w-2 -translate-y-1/2 rounded-full ${tone.dot}`}
       />
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        className={`w-full cursor-pointer appearance-none rounded-full py-1.5 pl-7 pr-8 text-base font-medium ring-1 sm:text-sm ring-inset transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 ${tone.select}`}
+        className={`w-full cursor-pointer appearance-none rounded-full py-1.5 ${compact ? "pl-6 pr-6" : "pl-7 pr-8"} text-base font-medium ring-1 sm:text-sm ring-inset transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 ${tone.select}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -58,7 +59,7 @@ export default function StatusSelect({
         aria-hidden="true"
         viewBox="0 0 20 20"
         fill="currentColor"
-        className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60"
+        className={`pointer-events-none absolute ${compact ? "right-1.5" : "right-2.5"} top-1/2 h-4 w-4 -translate-y-1/2 opacity-60`}
       >
         <path
           fillRule="evenodd"

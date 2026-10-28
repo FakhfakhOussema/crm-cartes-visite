@@ -178,18 +178,19 @@ const ROW_STYLES = {
   none: { row: "hover:bg-gray-50", card: "bg-white", edge: "" },
 };
 
-// The dropdowns shown in every row / card, in this order (after the company). `widthClassName`: width in the table.
+// The dropdowns shown in every row / card, in this order (after the company). `widthClassName`: width in the table,
+// just enough for the longest option.
 const STATUS_FIELDS = [
-  { label: "Call status", field: "callStatus", options: CALL_STATUSES },
-  { label: "Email status", field: "emailStatus", options: EMAIL_STATUSES },
-  { label: "Stock", field: "stock", options: STOCK_STATUSES },
-  { label: "Type", field: "type", options: CONTACT_TYPES, widthClassName: "w-20" },
-  { label: "Contact", field: "channel", options: CONTACT_CHANNELS, widthClassName: "w-36" },
-  { label: "File state", field: "fileState", options: FILE_STATES },
+  { label: "Call status", field: "callStatus", options: CALL_STATUSES, widthClassName: "w-33" },
+  { label: "Email status", field: "emailStatus", options: EMAIL_STATUSES, widthClassName: "w-26" },
+  { label: "Stock", field: "stock", options: STOCK_STATUSES, widthClassName: "w-34" },
+  { label: "Type", field: "type", options: CONTACT_TYPES, widthClassName: "w-16" },
+  { label: "Contact", field: "channel", options: CONTACT_CHANNELS, widthClassName: "w-33" },
+  { label: "File state", field: "fileState", options: FILE_STATES, widthClassName: "w-28" },
 ];
 
 // Columns of the table; everything else is in the details panel opened by the arrow of each row.
-const COLUMNS = ["Company", ...STATUS_FIELDS.map(({ label }) => label)];
+const COLUMNS = ["Company", ...STATUS_FIELDS.map(({ label }) => label), "Notes"];
 
 // One labelled value of the details panel. `empty`: nothing to show, a dash is displayed instead.
 function DetailItem({ label, empty = false, className = "", children }) {
@@ -281,6 +282,9 @@ function ContactDetails({ contact, fullName, getSendHref, onUploadFile, onPrevie
       </DetailItem>
       <DetailItem label="Date added" empty={!contact.dateAdded}>
         {formatDate(contact.dateAdded)}
+      </DetailItem>
+      <DetailItem label="Notes" empty={!contact.notes} className="col-span-2 lg:col-span-3">
+        <span className="whitespace-pre-wrap">{contact.notes}</span>
       </DetailItem>
     </dl>
   );
@@ -573,11 +577,11 @@ export default function ContactsGrid({
             <th scope="col" className="w-10 rounded-tl-xl px-2 py-3">
               <span className="sr-only">Details</span>
             </th>
-            {COLUMNS.map((column) => (
+            {COLUMNS.map((column, index) => (
               <th
                 key={column}
                 scope="col"
-                className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                className={`whitespace-nowrap ${index === 0 ? "px-4" : "px-2"} py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500`}
               >
                 {column}
               </th>
@@ -635,16 +639,27 @@ export default function ContactsGrid({
                     </span>
                   </td>
                   {STATUS_FIELDS.map(({ label, field, options, widthClassName }) => (
-                    <td key={field} className="whitespace-nowrap px-4 py-3">
+                    <td key={field} className="whitespace-nowrap px-2 py-3">
                       <StatusSelect
                         label={`${label} of ${fullName}`}
                         value={contact[field]}
                         options={options}
                         widthClassName={widthClassName}
+                        compact
                         onChange={(value) => onStatusChange(contact.id, field, value)}
                       />
                     </td>
                   ))}
+                  {/* Notes read in place: up to 3 lines, the full text is in the tooltip and the details panel. */}
+                  <td className="w-72 min-w-56 max-w-80 px-2 py-3 text-gray-700">
+                    {contact.notes ? (
+                      <p title={contact.notes} className="line-clamp-3 whitespace-pre-wrap break-words">
+                        {contact.notes}
+                      </p>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <RowActions
                       contact={contact}
